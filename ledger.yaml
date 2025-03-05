@@ -1,0 +1,209 @@
+openapi: 3.0.3
+info:
+  title: Teya Ledger API
+  version: 1.0.0
+  description: API for managing transactions in the Teya Ledger system.
+servers:
+  - url: http://localhost:8080
+    description: Local development server
+paths:
+  /transactions/history/account/{accountId}:
+    get:
+      summary: Get transaction history
+      description: Retrieve a list of transactions for a specific account.
+      parameters:
+        - name: accountId
+          in: path
+          required: true
+          schema:
+            type: integer
+            example: 1
+          description: ID of the account.
+        - name: lastTransactionId
+          in: query
+          required: false
+          schema:
+            type: integer
+            example: 123
+          description: ID of the last transaction seen (optional).
+        - name: limit
+          in: query
+          required: true
+          schema:
+            type: integer
+            example: 10
+          description: Maximum number of transactions to return.
+      responses:
+        '200':
+          description: Successfully retrieved transaction history.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TransactionResponse'
+        '404':
+          description: Account not found.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: Account not found.
+
+  /transactions/deposit/account/{accountId}:
+    post:
+      summary: Deposit amount
+      description: Deposit money into a specific account.
+      parameters:
+        - name: accountId
+          in: path
+          required: true
+          schema:
+            type: integer
+            example: 1
+          description: ID of the account.
+        - name: idempotencyKey
+          in: header
+          required: true
+          schema:
+            type: string
+            format: uuid
+            example: "123e4567-e89b-12d3-a456-426614174000"
+          description: Idempotency key to prevent duplicate requests.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AmountRequest'
+      responses:
+        '201':
+          description: Amount deposited successfully.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TransactionMessageResponse'
+        '400':
+          description: Invalid request.
+        '404':
+          description: Account not found.
+        '409':
+          description: Duplicate request (idempotency key conflict).
+
+  /transactions/withdraw/account/{accountId}:
+    post:
+      summary: Withdraw amount
+      description: Withdraw money from a specific account.
+      parameters:
+        - name: accountId
+          in: path
+          required: true
+          schema:
+            type: integer
+            example: 1
+          description: ID of the account.
+        - name: idempotencyKey
+          in: header
+          required: true
+          schema:
+            type: string
+            format: uuid
+            example: "123e4567-e89b-12d3-a456-426614174000"
+          description: Idempotency key to prevent duplicate requests.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AmountRequest'
+      responses:
+        '201':
+          description: Amount withdrawn successfully.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TransactionMessageResponse'
+        '400':
+          description: Invalid request.
+        '404':
+          description: Account not found.
+        '409':
+          description: Duplicate request (idempotency key conflict).
+        '422':
+          description: Insufficient balance.
+
+components:
+  schemas:
+    TransactionResponse:
+      type: object
+      properties:
+        transactions:
+          type: array
+          items:
+            $ref: '#/components/schemas/Transaction'
+        metadata:
+          $ref: '#/components/schemas/Metadata'
+      example:
+        transactions:
+          - id: 1
+            type: DEPOSIT
+            amount: 100
+            timestamp: "2023-10-01T12:34:56Z"
+            status: COMPLETED
+          - id: 2
+            type: WITHDRAWAL
+            amount: 50
+            timestamp: "2023-10-02T14:20:00Z"
+            status: COMPLETED
+        metadata:
+          records: 2
+          lastSeenId: 2
+
+    Transaction:
+      type: object
+      properties:
+        id:
+          type: integer
+          example: 1
+        type:
+          type: string
+          enum: [DEPOSIT, WITHDRAWAL]
+          example: DEPOSIT
+        amount:
+          type: integer
+          example: 100
+        timestamp:
+          type: string
+          format: date-time
+          example: "2023-10-01T12:34:56Z"
+        status:
+          type: string
+          enum: [COMPLETED, PENDING, FAILED]
+          example: COMPLETED
+
+    Metadata:
+      type: object
+      properties:
+        records:
+          type: integer
+          example: 2
+        lastSeenId:
+          type: integer
+          example: 2
+
+    TransactionMessageResponse:
+      type: object
+      properties:
+        message:
+          type: string
+          example: "Transaction completed successfully."
+
+    AmountRequest:
+      type: object
+      properties:
+        amount:
+          type: integer
+          example: 100
+      required:
+        - amount
