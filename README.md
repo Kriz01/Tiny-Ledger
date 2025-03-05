@@ -12,8 +12,9 @@ is designed for simplicity and ease of use.
 - **CRUD Operations**: Create, Read, Update ledger entries.
 - **REST API**: Exposes endpoints for managing ledger entries.
 - **SQLite Database**: Lightweight, file-based database for easy setup.
-- [Swagger UI](http://localhost:8080/swagger-ui/index.html): Interactive API documentation for testing endpoints.
-
+- [Swagger UI](swagger.html): Interactive API documentation for testing endpoints.
+  - Open this file in any browser to access the Swagger UI properly.
+- [Postman Collection](teya.postman_collection.json): Import this collection into **Postman** to test API requests.
 ---
 
 ## Prerequisites
